@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2024", // Versão do JavaScript para a qual o código TypeScript será compilado
+    "module": "NodeNext", // Qual tipo de módulo será gerado (nodenext é recomendado para projetos modernos)
+    "moduleResolution": "NodeNext", // Como os módulos serão resolvidos (nodenext é recomendado para projetos modernos)
+    "lib": ["ES2024"], // Quais recursos do JavaScript estarão disponíveis durante a compilação
+    "strict": true, // Conjunto de regras para garantir maior segurança e qualidade do código
+    "outDir": "dist", // Onde os arquivos compilados serão colocados
+    "rootDir": "src", // Onde meus arquivos TypeScript estão localizados
+    "esModuleInterop": true, // Permite a importação de módulos CommonJS em ESModules e vice-versa
+    "moduleDetection": "force", // Força a detecção de módulos, mesmo que não haja uma extensão de arquivo
+    "skipLibCheck": true, // Pula a verificação de tipos em arquivos de declaração de terceiros para acelerar a compilação
+    "types": ["vitest/globals"]
+  },
+  "include": ["src"]
+}
