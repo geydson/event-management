@@ -1,25 +1,25 @@
 import "dotenv/config"
-import { drizzle } from "drizzle-orm/node-postgres"
 
 import * as schema from "../db/schema.js"
 import { EventRepository } from "../application/CreateEvent.js"
 import { OnSiteEvent } from "../application/entities/OnSiteEvent.js"
 import { and, eq } from "drizzle-orm"
-
-if (!process.env.DATABASE_URL) {
-  throw new Error("Missing DATABASE_URL")
-}
-
-const db = drizzle(process.env.DATABASE_URL, { schema })
+import { db } from "../db/client.js"
 
 // Adapter
 export class EventRepositoryDrizzle implements EventRepository {
+  database: typeof db
+
+  constructor(database: typeof db) {
+    this.database = database
+  }
+
   async getByDataLatAndLong(params: {
     date: Date
     latitude: number
     longitude: number
   }): Promise<OnSiteEvent | null> {
-    const output = await db.query.eventsTable.findFirst({
+    const output = await this.database.query.eventsTable.findFirst({
       where: and(
         eq(schema.eventsTable.date, params.date),
         eq(schema.eventsTable.latitude, params.latitude.toString()),
@@ -43,7 +43,7 @@ export class EventRepositoryDrizzle implements EventRepository {
   }
 
   async create(input: OnSiteEvent): Promise<OnSiteEvent> {
-    const [output] = await db
+    const [output] = await this.database
       .insert(schema.eventsTable)
       .values({
         // @ts-expect-error - d
