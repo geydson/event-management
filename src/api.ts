@@ -1,6 +1,12 @@
 import { CreateEvent } from "./application/CreateEvent.js"
 import { EventRepositoryDrizzle } from "./resources/EventRepository.js"
 import fastify, { FastifyReply, FastifyRequest } from "fastify"
+import {
+  ZodTypeProvider,
+  serializerCompiler,
+  validatorCompiler,
+} from "fastify-type-provider-zod"
+import z from "zod"
 
 import { db } from "./db/client.js"
 
@@ -11,33 +17,64 @@ const app = fastify()
 
 const PORT = process.env.PORT || 3000
 
-app.post("/events", async (req: FastifyRequest, res: FastifyReply) => {
-  const { name, ticketPriceInCents, latitude, longitude, date, ownerId } =
-    req.body as {
-      name: string
-      ticketPriceInCents: number
-      latitude: number
-      longitude: number
-      date: string
-      ownerId: string
-    }
+app.setValidatorCompiler(validatorCompiler)
+app.setSerializerCompiler(serializerCompiler)
 
-  try {
-    const eventRepositoryDatabase = new EventRepositoryDrizzle(db)
-    const createEvent = new CreateEvent(eventRepositoryDatabase)
-    const event = await createEvent.execute({
-      date: new Date(date),
-      name,
-      ticketPriceInCents,
-      latitude,
-      longitude,
-      ownerId,
-    })
-    res.status(201).send(event)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (error: any) {
-    return res.status(400).send({ message: error.message })
-  }
+app.withTypeProvider<ZodTypeProvider>().route({
+  method: "POST",
+  url: "/events",
+  schema: {
+    body: z.object({
+      name: z.string(),
+      ticketPriceInCents: z.number(),
+      latitude: z.number(),
+      longitude: z.number(),
+      date: z.iso.datetime(),
+      ownerId: z.uuid(),
+    }),
+    response: {
+      201: z.object({
+        id: z.uuid(),
+        name: z.string(),
+        ticketPriceInCents: z.number(),
+        latitude: z.number(),
+        longitude: z.number(),
+        date: z.iso.datetime(),
+        ownerId: z.uuid(),
+      }),
+      400: z.object({
+        message: z.string(),
+      }),
+    },
+  },
+  handler: async (req: FastifyRequest, res: FastifyReply) => {
+    const { name, ticketPriceInCents, latitude, longitude, date, ownerId } =
+      req.body as {
+        name: string
+        ticketPriceInCents: number
+        latitude: number
+        longitude: number
+        date: string
+        ownerId: string
+      }
+
+    try {
+      const eventRepositoryDatabase = new EventRepositoryDrizzle(db)
+      const createEvent = new CreateEvent(eventRepositoryDatabase)
+      const event = await createEvent.execute({
+        date: new Date(date),
+        name,
+        ticketPriceInCents,
+        latitude,
+        longitude,
+        ownerId,
+      })
+      return res.status(201).send({ ...event, date: event.date.toISOString() })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      return res.status(400).send({ message: error.message })
+    }
+  },
 })
 
 app.listen({ port: PORT }, () => {

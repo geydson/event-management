@@ -11,7 +11,9 @@ describe("POST /events", () => {
       ticketPriceInCents: 5000,
       latitude: 37.7749,
       longitude: -122.4194,
-      date: new Date().setHours(new Date().getHours() + 1),
+      date: new Date(
+        new Date().setHours(new Date().getHours() + 1)
+      ).toISOString(),
       ownerId: crypto.randomUUID(),
     }
 
