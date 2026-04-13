@@ -1,4 +1,5 @@
 import { OnSiteEvent } from "./entities/OnSiteEvent.js"
+import { InvalidOwnerIdError } from "./errors/index.js"
 
 interface Input {
   name: string
@@ -36,7 +37,7 @@ export class CreateEvent {
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
     if (!uuidRegex.test(ownerId)) {
-      throw new Error("Invalid ownerId")
+      throw new InvalidOwnerIdError()
     }
 
     if (ticketPriceInCents < 0) {

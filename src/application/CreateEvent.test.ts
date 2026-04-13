@@ -4,8 +4,10 @@ import { EventRepositoryDrizzle } from "../resources/EventRepository.js"
 import { CreateEvent } from "./CreateEvent.js"
 import { db } from "../db/client.js"
 import { eventsTable } from "../db/schema.js"
+import { InvalidOwnerIdError } from "./errors/index.js"
 
 describe("createEvents", () => {
+  // Para testes em memoria
   // class EventRepositoryInMemory implements EventRepository {
   //   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   //   async create(input: any) {
@@ -70,7 +72,7 @@ describe("createEvents", () => {
     }
 
     const output = sut.execute(input)
-    await expect(output).rejects.toThrow(new Error("Invalid ownerId"))
+    await expect(output).rejects.toThrow(new InvalidOwnerIdError())
   })
 
   test("Deve lançar um erro se o ticket price for negativo", async () => {
