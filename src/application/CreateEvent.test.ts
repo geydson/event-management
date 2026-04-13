@@ -4,7 +4,10 @@ import { EventRepositoryDrizzle } from "../resources/EventRepository.js"
 import { CreateEvent } from "./CreateEvent.js"
 import { db } from "../db/client.js"
 import { eventsTable } from "../db/schema.js"
-import { InvalidOwnerIdError } from "./errors/index.js"
+import {
+  EventAlreadyExistsError,
+  InvalidParameterError,
+} from "./errors/index.js"
 
 describe("createEvents", () => {
   // Para testes em memoria
@@ -72,7 +75,7 @@ describe("createEvents", () => {
     }
 
     const output = sut.execute(input)
-    await expect(output).rejects.toThrow(new InvalidOwnerIdError())
+    await expect(output).rejects.toThrow(new InvalidParameterError("ownerId"))
   })
 
   test("Deve lançar um erro se o ticket price for negativo", async () => {
@@ -88,7 +91,9 @@ describe("createEvents", () => {
     }
 
     const output = sut.execute(input)
-    await expect(output).rejects.toThrow(new Error("Invalid ticket price"))
+    await expect(output).rejects.toThrow(
+      new InvalidParameterError("ticketPriceInCents must be positive")
+    )
   })
 
   test("Deve lançar um erro se a latitude for inválida", async () => {
@@ -104,7 +109,9 @@ describe("createEvents", () => {
     }
 
     const output = sut.execute(input)
-    await expect(output).rejects.toThrow(new Error("Invalid latitude"))
+    await expect(output).rejects.toThrow(
+      new InvalidParameterError("latitude must be between -90 and 90")
+    )
   })
 
   test("Deve lançar um erro se a longitude for inválida", async () => {
@@ -120,7 +127,9 @@ describe("createEvents", () => {
     }
 
     const output = sut.execute(input)
-    await expect(output).rejects.toThrow(new Error("Invalid longitude"))
+    await expect(output).rejects.toThrow(
+      new InvalidParameterError("longitude must be between -180 and 180")
+    )
   })
 
   test("Deve lançar um erro se a data for no passado", async () => {
@@ -137,7 +146,7 @@ describe("createEvents", () => {
 
     const output = sut.execute(input)
     await expect(output).rejects.toThrow(
-      new Error("Date must be in the future")
+      new InvalidParameterError("Date must be in the future")
     )
   })
 
@@ -159,7 +168,7 @@ describe("createEvents", () => {
     expect(output.ticketPriceInCents).toBe(input.ticketPriceInCents)
 
     const output2 = sut.execute(input)
-    await expect(output2).rejects.toThrow(new Error("Event already exists"))
+    await expect(output2).rejects.toThrow(new EventAlreadyExistsError())
   })
 
   test("Deve chamar o repository com os parâmetros corretos", async () => {
