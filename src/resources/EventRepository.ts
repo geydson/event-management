@@ -8,11 +8,7 @@ import { db } from "../db/client.js"
 
 // Adapter
 export class EventRepositoryDrizzle implements EventRepository {
-  database: typeof db
-
-  constructor(database: typeof db) {
-    this.database = database
-  }
+  constructor(private database: typeof db) {}
 
   async getByDataLatAndLong(params: {
     date: Date
