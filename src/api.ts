@@ -3,10 +3,13 @@ import { EventRepositoryDrizzle } from "./resources/EventRepository.js"
 import fastify, { FastifyReply, FastifyRequest } from "fastify"
 import {
   ZodTypeProvider,
+  jsonSchemaTransform,
   serializerCompiler,
   validatorCompiler,
 } from "fastify-type-provider-zod"
 import z from "zod"
+import fastifySwagger from "@fastify/swagger"
+import fastifySwaggerUi from "@fastify/swagger-ui"
 
 import { db } from "./db/client.js"
 
@@ -15,21 +18,48 @@ const app = fastify()
 // Usado com o Express
 // app.use(express.json())
 
-const PORT = process.env.PORT || 3000
+const PORT = process.env.PORT || 8085
 
 app.setValidatorCompiler(validatorCompiler)
 app.setSerializerCompiler(serializerCompiler)
 
-app.withTypeProvider<ZodTypeProvider>().route({
+await app.register(fastifySwagger, {
+  openapi: {
+    info: {
+      title: "Event Management API",
+      description: "API para gerenciamento de eventos",
+      version: "1.0.0",
+    },
+    servers: [
+      {
+        description: "Servidor local",
+        url: "http://localhost:8085",
+      },
+    ],
+  },
+  transform: jsonSchemaTransform,
+})
+
+await app.register(fastifySwaggerUi, {
+  routePrefix: "/docs",
+})
+
+await app.withTypeProvider<ZodTypeProvider>().route({
   method: "POST",
   url: "/events",
   schema: {
+    tags: ["Events"],
+    summary: "Cria um novo evento",
     body: z.object({
-      name: z.string(),
-      ticketPriceInCents: z.number(),
-      latitude: z.number(),
-      longitude: z.number(),
-      date: z.iso.datetime(),
+      name: z.string().default("Geydson Event"),
+      ticketPriceInCents: z.number().default(5000),
+      latitude: z.number().default(37.7749),
+      longitude: z.number().default(-122.4194),
+      date: z.iso
+        .datetime()
+        .default(
+          new Date(new Date().setHours(new Date().getHours() + 1)).toISOString()
+        ),
       ownerId: z.uuid(),
     }),
     response: {
@@ -77,6 +107,7 @@ app.withTypeProvider<ZodTypeProvider>().route({
   },
 })
 
-app.listen({ port: PORT }, () => {
+await app.ready()
+await app.listen({ port: PORT }, () => {
   console.log(`Server is running on port ${PORT}`)
 })

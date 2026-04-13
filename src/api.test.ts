@@ -17,7 +17,7 @@ describe("POST /events", () => {
       ownerId: crypto.randomUUID(),
     }
 
-    const response = await axios.post("http://localhost:3000/events", input)
+    const response = await axios.post("http://localhost:8085/events", input)
     expect(response.status).toBe(201)
     expect(response.data.name).toBe(input.name)
     expect(response.data.ticketPriceInCents).toBe(input.ticketPriceInCents)
@@ -36,7 +36,7 @@ describe("POST /events", () => {
       ownerId: "invalid-uuid",
     }
 
-    const response = await axios.post("http://localhost:3000/events", input)
+    const response = await axios.post("http://localhost:8085/events", input)
     expect(response.status).toBe(400)
   })
 })
