@@ -224,7 +224,45 @@ pnpm test:coverage
 
 ### Estratégia de Testes
 
-#### 1. **Testes Unitários de Use Cases**
+#### 1. **Testes E2E (End-to-End) da API**
+
+Testam a API completa com requisições HTTP reais:
+
+- `api.test.ts` - Testes dos endpoints REST
+
+**O que é testado:**
+
+- ✅ Requisições HTTP reais (POST, GET)
+- ✅ Status codes de resposta (201, 200, 400, 404)
+- ✅ Validação de payloads de entrada
+- ✅ Formato de resposta JSON
+- ✅ Integração completa (API → Use Case → Repository → Banco)
+
+**Bibliotecas:**
+
+- **Axios** - Cliente HTTP para requisições
+- Servidor rodando em `http://localhost:8085`
+
+**Exemplo de teste E2E:**
+
+```typescript
+test("Deve criar um evento com sucesso", async () => {
+  const input = {
+    name: "Evento de Tecnologia",
+    ticketPriceInCents: 5000,
+    // ...
+  }
+
+  const response = await axios.post("http://localhost:8085/events", input)
+
+  expect(response.status).toBe(201)
+  expect(response.data.name).toBe(input.name)
+})
+```
+
+> **📌 Nota**: Os testes E2E requerem que o servidor esteja rodando (`pnpm dev`). Eles validam o fluxo completo desde a requisição HTTP até a persistência no banco de dados.
+
+#### 2. **Testes Unitários de Use Cases**
 
 Testam a lógica de negócio isoladamente:
 
@@ -244,7 +282,7 @@ Testam a lógica de negócio isoladamente:
 - ✅ Erro ao buscar evento inexistente
 - ✅ Erro com ID inválido
 
-#### 2. **Testes de Integração de Repositório**
+#### 3. **Testes de Integração de Repositório**
 
 Testam a integração com o banco de dados real usando Testcontainers:
 
@@ -257,7 +295,7 @@ Testam a integração com o banco de dados real usando Testcontainers:
 - Conversão de tipos (decimal para number)
 - Queries complexas com múltiplas condições
 
-#### 3. **Testcontainers - Banco Real**
+#### 4. **Testcontainers - Banco Real**
 
 Diferente de mocks, usamos um **PostgreSQL real em container Docker** durante os testes:
 
@@ -287,14 +325,15 @@ beforeEach(async () => {
 
 ```
 src/
+├── api.test.ts                   # ← Testes E2E da API
 ├── application/
 │   ├── CreateEvent.ts
-│   ├── CreateEvent.test.ts       # ← Testes do use case
+│   ├── CreateEvent.test.ts       # ← Testes unitários do use case
 │   ├── GetEvent.ts
-│   └── GetEvent.test.ts          # ← Testes do use case
+│   └── GetEvent.test.ts          # ← Testes unitários do use case
 ├── resources/
 │   ├── EventRepository.ts
-│   └── EventRepository.test.ts   # ← Testes de integração
+│   └── EventRepository.test.ts   # ← Testes de integração com banco
 └── db/
     └── teste-db.ts               # ← Setup testcontainers
 ```
@@ -329,13 +368,16 @@ resources/EventRepository |   100%  |   100%   |  100%   |  100%   | ✅
 - ✅ **Repositories** - Todas operações de banco testadas
 - ✅ **Errors** - Todos erros customizados testados
 
+**Cobertura adicional:**
+
+- ✅ **API E2E** - 2 testes de integração completa (POST e validações)
+
 **Arquivos não testados (propositalmente):**
 
-- ⚪ `api.ts` - Servidor Fastify (testes E2E planejados)
-- ⚪ `client.ts` - Cliente de banco de dados
-- ⚪ Arquivos de configuração (ESLint, Drizzle, etc)
+- ⚪ `client.ts` - Cliente de banco de dados (apenas configuração)
+- ⚪ Arquivos de configuração (ESLint, Drizzle, Commitlint, etc)
 
-> **💡 Estratégia**: Focamos em testar a **lógica de negócio** (use cases) e **persistência** (repositories) com 100% de cobertura. Testes E2E da API serão adicionados futuramente.
+> **💡 Estratégia**: Cobertura de 100% nas camadas de **negócio** (use cases) e **persistência** (repositories), complementada por testes **E2E** que validam o fluxo completo da API.
 
 **Métricas monitoradas:**
 
