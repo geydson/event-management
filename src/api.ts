@@ -28,6 +28,9 @@ const PORT = process.env.PORT || 8085
 app.setValidatorCompiler(validatorCompiler)
 app.setSerializerCompiler(serializerCompiler)
 
+const eventRepositoryDatabase = new EventRepositoryDrizzle(db)
+const createEvent = new CreateEvent(eventRepositoryDatabase)
+
 await app.register(fastifySwagger, {
   openapi: {
     info: {
@@ -100,8 +103,6 @@ await app.withTypeProvider<ZodTypeProvider>().route({
       }
 
     try {
-      const eventRepositoryDatabase = new EventRepositoryDrizzle(db)
-      const createEvent = new CreateEvent(eventRepositoryDatabase)
       const event = await createEvent.execute({
         date: new Date(date),
         name,

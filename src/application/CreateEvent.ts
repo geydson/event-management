@@ -4,7 +4,19 @@ import {
   InvalidParameterError,
 } from "./errors/index.js"
 
+// DTO - Data Transfer Object
 interface Input {
+  name: string
+  ownerId: string
+  latitude: number
+  longitude: number
+  ticketPriceInCents: number
+  date: Date
+}
+
+// DTO - Data Transfer Object
+interface Output {
+  id: string
   name: string
   ownerId: string
   latitude: number
@@ -32,7 +44,7 @@ export class CreateEvent {
   // Mesma coisa que o código acima, mas usando a sintaxe de parâmetros do construtor
   constructor(private eventRepository: EventRepository) {}
 
-  async execute(input: Input) {
+  async execute(input: Input): Promise<Output> {
     const { ownerId, name, ticketPriceInCents, latitude, longitude, date } =
       input
 
