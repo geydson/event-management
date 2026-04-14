@@ -72,7 +72,6 @@ await app.withTypeProvider<ZodTypeProvider>().route({
     }),
     response: {
       201: z.object({
-        code: z.string(),
         id: z.uuid(),
         name: z.string(),
         ticketPriceInCents: z.number(),
