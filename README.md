@@ -196,25 +196,204 @@ GET /events/{id}
 
 ## 🧪 Testes
 
-O projeto utiliza Vitest com testcontainers para testes de integração com banco de dados real.
+O projeto possui uma estratégia robusta de testes automatizados, garantindo qualidade e confiabilidade do código.
+
+### Tecnologias de Teste
+
+- **[Vitest](https://vitest.dev/)** - Framework de testes rápido e moderno
+- **[Testcontainers](https://testcontainers.com/)** - Containers PostgreSQL reais para testes de integração
+- **Coverage V8** - Relatórios de cobertura de código
+
+### Comandos de Teste
 
 ```bash
 # Executar todos os testes
 pnpm test
 
+# Executar testes em modo watch (desenvolvimento)
+pnpm test:watch
+
 # Executar testes específicos
 pnpm test CreateEvent
 pnpm test GetEvent
+pnpm test EventRepository
 
 # Gerar relatório de cobertura
 pnpm test:coverage
 ```
 
-### Estrutura de Testes
+### Estratégia de Testes
 
-- `*.test.ts` - Testes unitários e de integração
-- Testcontainers - Banco PostgreSQL em container para testes
-- Cobertura de casos: sucesso, validações e falhas
+#### 1. **Testes Unitários de Use Cases**
+
+Testam a lógica de negócio isoladamente:
+
+- `CreateEvent.test.ts` - Casos de uso de criação
+- `GetEvent.test.ts` - Casos de uso de busca
+
+**Exemplos de cenários testados:**
+
+- ✅ Criação de evento com dados válidos
+- ✅ Validação de UUID do proprietário
+- ✅ Validação de preço de ingresso (não negativo)
+- ✅ Validação de latitude (-90 a 90)
+- ✅ Validação de longitude (-180 a 180)
+- ✅ Validação de data futura
+- ✅ Prevenção de conflito (mesmo local/data)
+- ✅ Busca de evento existente
+- ✅ Erro ao buscar evento inexistente
+- ✅ Erro com ID inválido
+
+#### 2. **Testes de Integração de Repositório**
+
+Testam a integração com o banco de dados real usando Testcontainers:
+
+- `EventRepository.test.ts` - Operações de persistência
+
+**O que é testado:**
+
+- Inserção de dados no PostgreSQL
+- Consultas com Drizzle ORM
+- Conversão de tipos (decimal para number)
+- Queries complexas com múltiplas condições
+
+#### 3. **Testcontainers - Banco Real**
+
+Diferente de mocks, usamos um **PostgreSQL real em container Docker** durante os testes:
+
+**Vantagens:**
+
+- ✅ Testes mais realistas e confiáveis
+- ✅ Detecta problemas de schema e queries
+- ✅ Valida conversões de tipos do banco
+- ✅ Simula o ambiente de produção
+
+**Como funciona:**
+
+```typescript
+// Setup executado antes dos testes
+beforeAll(async () => {
+  const testDatabase = await startPostgresTestDb()
+  database = testDatabase.db
+})
+
+// Limpa dados entre testes
+beforeEach(async () => {
+  await database.delete(eventsTable).execute()
+})
+```
+
+### Estrutura de Arquivos de Teste
+
+```
+src/
+├── application/
+│   ├── CreateEvent.ts
+│   ├── CreateEvent.test.ts       # ← Testes do use case
+│   ├── GetEvent.ts
+│   └── GetEvent.test.ts          # ← Testes do use case
+├── resources/
+│   ├── EventRepository.ts
+│   └── EventRepository.test.ts   # ← Testes de integração
+└── db/
+    └── teste-db.ts               # ← Setup testcontainers
+```
+
+### Cobertura de Testes
+
+Visualize a cobertura completa:
+
+```bash
+pnpm test:coverage
+```
+
+O relatório é gerado em `coverage/index.html` e pode ser aberto no navegador.
+
+#### 📊 Cobertura Atual
+
+```
+Test Files: 4 passed (4)
+Tests: 14 passed (14)
+
+File                      | % Stmts | % Branch | % Funcs | % Lines |
+--------------------------|---------|----------|---------|---------|
+application/CreateEvent   |   100%  |   100%   |  100%   |  100%   | ✅
+application/GetEvent      |   100%  |   100%   |  100%   |  100%   | ✅
+application/errors        |   100%  |   100%   |  100%   |  100%   | ✅
+resources/EventRepository |   100%  |   100%   |  100%   |  100%   | ✅
+```
+
+**Camadas com 100% de cobertura:**
+
+- ✅ **Use Cases** - Toda lógica de negócio testada
+- ✅ **Repositories** - Todas operações de banco testadas
+- ✅ **Errors** - Todos erros customizados testados
+
+**Arquivos não testados (propositalmente):**
+
+- ⚪ `api.ts` - Servidor Fastify (testes E2E planejados)
+- ⚪ `client.ts` - Cliente de banco de dados
+- ⚪ Arquivos de configuração (ESLint, Drizzle, etc)
+
+> **💡 Estratégia**: Focamos em testar a **lógica de negócio** (use cases) e **persistência** (repositories) com 100% de cobertura. Testes E2E da API serão adicionados futuramente.
+
+**Métricas monitoradas:**
+
+- **Statements** - Porcentagem de declarações executadas
+- **Branches** - Cobertura de condicionais (if/else)
+- **Functions** - Funções testadas
+- **Lines** - Linhas de código cobertas
+
+### Padrão de Testes
+
+O projeto segue o padrão **AAA (Arrange-Act-Assert)**:
+
+```typescript
+test("Deve criar um evento com sucesso", async () => {
+  // Arrange - Preparar dados
+  const { sut } = makeSut()
+  const input = {
+    name: "Evento de Tecnologia",
+    ticketPriceInCents: 5000,
+    // ...
+  }
+
+  // Act - Executar ação
+  const output = await sut.execute(input)
+
+  // Assert - Verificar resultado
+  expect(output.id).toBeDefined()
+  expect(output.name).toBe(input.name)
+})
+```
+
+### Factory Pattern (makeSut)
+
+Usamos o padrão **Factory** para criar instâncias de teste:
+
+```typescript
+const makeSut = () => {
+  const eventRepository = new EventRepositoryDrizzle(database)
+  const sut = new CreateEvent(eventRepository) // sut = System Under Test
+  return { sut, eventRepository }
+}
+```
+
+**Benefícios:**
+
+- Código de teste mais limpo
+- Fácil de modificar dependências
+- Reutilização entre testes
+
+### Boas Práticas Implementadas
+
+- ✅ Isolamento entre testes (limpeza do banco)
+- ✅ Nomes descritivos de testes
+- ✅ Um assert por conceito testado
+- ✅ Testes independentes e determinísticos
+- ✅ Sem sleeps ou timeouts desnecessários
+- ✅ Setup e teardown apropriados
+- ✅ Testes rápidos (< 10s total)
 
 ## 🎨 Padrões de Código
 
