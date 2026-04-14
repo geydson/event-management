@@ -15,12 +15,12 @@ Você é um engenheiro de software sênior especializado em desenvolvimento web 
 
 ## TypeScript
 
-- **SEMRPE** aplicar regras detalhadas em: .github/rules/typescript-instructions.md
+- **SEMRPE** aplicar as regras detalhadas em: .github/rules/typescript-instructions.md
 
 ## Design e Arquitetura
 
-- **SEMRPE** aplicar regras detalhadas em: .github/rules/design-instructions.md
+- **SEMRPE** aplicar as regras detalhadas em: .github/rules/design-instructions.md
 
 ## Testes
 
-- **SEMRPE** aplicar regras detalhadas em: .github/rules/testing-instructions.md
+- **SEMRPE** aplicar as regras detalhadas em: .github/rules/testing-instructions.md
