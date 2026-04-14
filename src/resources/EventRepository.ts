@@ -10,6 +10,26 @@ import { db } from "../db/client.js"
 export class EventRepositoryDrizzle implements EventRepository {
   constructor(private database: typeof db) {}
 
+  async getById(id: string): Promise<OnSiteEvent | null> {
+    const output = await this.database.query.eventsTable.findFirst({
+      where: eq(schema.eventsTable.id, id),
+    })
+
+    if (!output) {
+      return null
+    }
+
+    return {
+      date: output.date,
+      id: output.id,
+      latitude: Number(output.latitude),
+      longitude: Number(output.longitude),
+      name: output.name,
+      ownerId: output.owner_id,
+      ticketPriceInCents: output.ticket_price_in_cents,
+    }
+  }
+
   async getByDataLatAndLong(params: {
     date: Date
     latitude: number

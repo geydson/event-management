@@ -1,4 +1,5 @@
 import { CreateEvent } from "./application/CreateEvent.js"
+import { GetEvent } from "./application/GetEvent.js"
 import { EventRepositoryDrizzle } from "./resources/EventRepository.js"
 import fastify, { FastifyReply, FastifyRequest } from "fastify"
 import {
@@ -23,13 +24,14 @@ const app = fastify()
 // Usado com o Express
 // app.use(express.json())
 
-const PORT = process.env.PORT || 8085
+const PORT = process.env.PORT ? Number(process.env.PORT) : 8085
 
 app.setValidatorCompiler(validatorCompiler)
 app.setSerializerCompiler(serializerCompiler)
 
 const eventRepositoryDatabase = new EventRepositoryDrizzle(db)
 const createEvent = new CreateEvent(eventRepositoryDatabase)
+const getEvent = new GetEvent(eventRepositoryDatabase)
 
 await app.register(fastifySwagger, {
   openapi: {
@@ -120,6 +122,62 @@ await app.withTypeProvider<ZodTypeProvider>().route({
         return res
           .status(400)
           .send({ code: "INVALID_PARAMETER", message: error.message })
+      }
+
+      if (error instanceof NotFoundError) {
+        return res
+          .status(404)
+          .send({ code: error.code, message: error.message })
+      }
+
+      return res
+        .status(400)
+        .send({ code: "SERVER_ERROR", message: error.message })
+    }
+  },
+})
+
+await app.withTypeProvider<ZodTypeProvider>().route({
+  method: "GET",
+  url: "/events/:id",
+  schema: {
+    tags: ["Events"],
+    summary: "Busca um evento por ID",
+    params: z.object({
+      id: z.uuid(),
+    }),
+    response: {
+      200: z.object({
+        id: z.uuid(),
+        name: z.string(),
+        ticketPriceInCents: z.number(),
+        latitude: z.number(),
+        longitude: z.number(),
+        date: z.iso.datetime(),
+        ownerId: z.uuid(),
+      }),
+      400: z.object({
+        code: z.string(),
+        message: z.string(),
+      }),
+      404: z.object({
+        code: z.string(),
+        message: z.string(),
+      }),
+    },
+  },
+  handler: async (req: FastifyRequest, res: FastifyReply) => {
+    const { id } = req.params as { id: string }
+
+    try {
+      const event = await getEvent.execute({ id })
+      return res.status(200).send({ ...event, date: event.date.toISOString() })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      if (error instanceof InvalidParameterError) {
+        return res
+          .status(400)
+          .send({ code: error.code, message: error.message })
       }
 
       if (error instanceof NotFoundError) {

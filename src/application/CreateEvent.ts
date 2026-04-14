@@ -33,6 +33,7 @@ export interface EventRepository {
     latitude: number
     longitude: number
   }) => Promise<OnSiteEvent | null>
+  getById: (id: string) => Promise<OnSiteEvent | null>
 }
 
 export class CreateEvent {
